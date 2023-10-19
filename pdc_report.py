@@ -4,7 +4,7 @@ from xml.etree import ElementTree as ET
 from datetime import datetime, time, timedelta
 
 
-
+WORKING_TIME = 18
 
 def time_to_seconds(timestr):
     """Convert time string formatted as H:M:S to seconds."""
@@ -71,6 +71,16 @@ root = tree.getroot()
 
 # Create a new Excel workbook and a master sheet
 wb = openpyxl.Workbook()
+
+# Step 1: Create the Dashboard sheet as the first sheet
+dashboard = wb.create_sheet(title="Dashboard", index=0)  # index=0 makes it the first sheet
+
+# Step 2: Write the headers to the Dashboard
+dashboard.append(["Date", "Production Efficiency"])  # Add your headers here
+
+# Dictionary to keep track of unique dates (to avoid duplicate entries in the Dashboard)
+unique_dates = {}
+
 master_sheet = wb.create_sheet(title="Master Sheet")
 master_sheet.append(["Part Name", "Date", "Start Time", "Finish Time", "Total Run Time (hours)", "Idle Time (hours)", 
                      "Production Time (hours)", "PT-TRT (hours)", "Shift"])  # The header for the master sheet
@@ -95,6 +105,10 @@ for part_report in root.findall('.//PartReports/PartReport'):
 
     time_object = datetime.strptime(creation_datetime, '%Y-%m-%dT%H:%M:%S')
 
+    if current_date not in unique_dates:
+        dashboard.append([current_date])  # This adds a new row with the date
+        unique_dates[current_date] = True  # Mark this date as added
+
      
     if time_object.time() <= time(5, 0):  # Here we create a time object representing 5 AM
         # Adjust the date
@@ -115,6 +129,14 @@ for part_report in root.findall('.//PartReports/PartReport'):
                    seconds_to_decimal_hours(day_total_pt_trt_seconds)])
 
         adjust_column_width(ws)  # Auto-adjust columns' width
+
+        #New Code that divides the production time total by 18hrs
+        production_time_divided = seconds_to_decimal_hours(day_total_pt_seconds) / WORKING_TIME
+
+        # Append this calculated value in a new row below the totals.
+        ws.append(["Production Time / 18", "", "", "", "", "", production_time_divided, "", ""])
+
+
 
         # Reset totals for the new day
         day_total_production_time_in_seconds = 0
@@ -141,6 +163,7 @@ for part_report in root.findall('.//PartReports/PartReport'):
     pt_trt_in_seconds = total_production_time_in_seconds - production_time_seconds
     day_total_pt_trt_seconds += pt_trt_in_seconds  # This line was missing in the original script, causing an incorrect total PT-TRT.
 
+   
     if previous_finish_time_in_seconds is not None:
         idle_time_in_seconds = time_to_seconds(start_time) - previous_finish_time_in_seconds
         if idle_time_in_seconds < 0:
@@ -177,12 +200,18 @@ ws.append(["Totals", "", "", "",
            seconds_to_decimal_hours(day_total_pt_seconds),
            seconds_to_decimal_hours(day_total_pt_trt_seconds)])
 
+#New code 
+production_time_divided = seconds_to_decimal_hours(day_total_pt_seconds) / WORKING_TIME
+
+# Append this calculated value in a new row below the totals for the last date.
+ws.append(["Production Time / 18", "", "", "", "", "", production_time_divided, "", ""])
+
 # Remove the default sheet
 if "Sheet" in wb.sheetnames:
     del wb["Sheet"]
 
 # Save the workbook
-output_excel_path = os.path.join(os.path.dirname(xml_file_path), "Production_Report.xlsx")
+output_excel_path = os.path.join(os.path.dirname(xml_file_path), "Production_Report_TEST.xlsx")
 wb.save(output_excel_path)
 
 print(f"Excel file created successfully at {output_excel_path}!")
