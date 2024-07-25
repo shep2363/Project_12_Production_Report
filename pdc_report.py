@@ -4,7 +4,7 @@ from xml.etree import ElementTree as ET
 from datetime import datetime, time, timedelta
 
 
-WORKING_TIME = 18
+WORKING_TIME = 24
 
 def time_to_seconds(timestr):
     """Convert time string formatted as H:M:S to seconds."""
@@ -39,10 +39,10 @@ def adjust_column_width(worksheet):
 
 def get_shift_time():
     """Prompt the user to input the start and end times for day and night shifts."""
-    day_shift_start = '06:00:00'
-    day_shift_end = '16:29:00'
-    night_shift_start = '16:30:00'
-    night_shift_end = '03:00:00'
+    day_shift_start = '07:00:00'
+    day_shift_end = '19:00:00'
+    night_shift_start = '19:01:00'
+    night_shift_end = '06:59:00'
     
     return day_shift_start, day_shift_end, night_shift_start, night_shift_end
 
@@ -134,7 +134,7 @@ for part_report in root.findall('.//PartReports/PartReport'):
         production_time_divided = seconds_to_decimal_hours(day_total_pt_seconds) / WORKING_TIME
 
         # Append this calculated value in a new row below the totals.
-        ws.append(["Production Time / 18", "", "", "", "", "", production_time_divided, "", ""])
+        ws.append(["Production Time / 24", "", "", "", "", "", production_time_divided, "", ""])
 
 
 
@@ -204,14 +204,14 @@ ws.append(["Totals", "", "", "",
 production_time_divided = seconds_to_decimal_hours(day_total_pt_seconds) / WORKING_TIME
 
 # Append this calculated value in a new row below the totals for the last date.
-ws.append(["Production Time / 18", "", "", "", "", "", production_time_divided, "", ""])
+ws.append(["Production Time / 24", "", "", "", "", "", production_time_divided, "", ""])
 
 # Remove the default sheet
 if "Sheet" in wb.sheetnames:
     del wb["Sheet"]
 
 # Save the workbook
-output_excel_path = os.path.join(os.path.dirname(xml_file_path), "Production_Report_TEST.xlsx")
+output_excel_path = os.path.join(os.path.dirname(xml_file_path), "Production_Report_Beamline.xlsx")
 wb.save(output_excel_path)
 
 print(f"Excel file created successfully at {output_excel_path}!")
